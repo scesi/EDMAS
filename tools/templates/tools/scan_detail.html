@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html><head><title>Scan {{ job.id }}</title></head><body>
+<h1>Scan de {{ job.target }}</h1>
+<p>Estado: {{ job.state }}</p>
+<p>Iniciado: {{ job.started_at }} | Finalizado: {{ job.finished_at }}</p>
+<h2>Subdominios Encontrados</h2>
+<ul>
+  {% for sub in job.subdomains %}
+    <li>{{ sub }}</li>
+  {% empty %}
+    <li>No se encontraron subdominios.</li>
+  {% endfor %}
+</ul>
+<a href="{% url 'scan-list' %}">Volver</a>
+</body></html>

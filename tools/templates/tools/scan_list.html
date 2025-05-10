@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html><head><title>Scans</title></head><body>
+<h1>Escaneos de Subdominios</h1>
+<form method="post">
+  {% csrf_token %}
+  <input type="text" name="target" placeholder="example.com" required>
+  <button type="submit">Lanzar Scan</button>
+</form>
+<ul>
+  {% for scan in scans %}
+    <li><a href="{% url 'scan-detail' scan.id %}">{{ scan.target }}</a> — {{ scan.state }}</li>
+  {% empty %}
+    <li>No hay scans.</li>
+  {% endfor %}
+</ul>
+</body></html>
