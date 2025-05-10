@@ -34,24 +34,21 @@
    ```
 2. Aplica las migraciones de Django:
    ```bash
+   python manage.py makemigrations
    python manage.py migrate
    ```
 
 ## Uso
-1. Inicia el worker de Celery:
-   ```bash
-   celery -A envysec worker --concurrency=1 --loglevel=info
-   ```
-2. Inicia el servidor de desarrollo de Django:
+1. Inicia el servidor de desarrollo de Django:
    ```bash
    python manage.py runserver
    ```
-3. Lanza un escaneo de subdominios:
+2. Inicia el worker de Celery:
    ```bash
-   curl -X POST http://localhost:8000/api/scans/      -H 'Content-Type: application/json'      -d '{"target":"example.com"}'
+   celery -A envysec worker --concurrency=1 --loglevel=info
    ```
-4. Consulta el estado y resultados:
+3. visita el sitio y realiza escaneos:
    ```bash
-   curl http://localhost:8000/api/scans/1/
+   http://localhost:8000/scanner/ 
    ```
 
