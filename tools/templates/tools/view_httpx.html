@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Resultados de Escaneo</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f7f7f7; padding: 20px; }
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            margin-top: 0;
+        }
+        .field {
+            margin-bottom: 5px;
+        }
+        .label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Resultados del Escaneo Web</h1>
+
+    {% for resultado in job %}
+    <div class="card">
+        <h2>{{ resultado.url }}</h2>
+        <div class="field"><span class="label">IP:</span> {{ resultado }}</div>
+        <div class="field"><span class="label">Puerto:</span> {{ resultado.port }}</div>
+        <div class="field"><span class="label">Webserver:</span> {{ resultado.webserver }}</div>
+        <div class="field"><span class="label">Método:</span> {{ resultado.method }}</div>
+        <div class="field"><span class="label">Título:</span> {{ resultado.title|default:"(sin título)" }}</div>
+        <div class="field"><span class="label">Tecnologías:</span> {{ resultado.tech|join:", " }}</div>
+        <div class="field"><span class="label">Tiempo de respuesta:</span> {{ resultado.time }}</div>
+        <div class="field"><span class="label">Status Code:</span> {{ resultado.status_code }}</div>
+        <div class="field"><span class="label">Content Type:</span> {{ resultado.content_type }}</div>
+        <div class="field"><span class="label">Path:</span> {{ resultado.path }}</div>
+        <div class="field"><span class="label">Resuelto a:</span> {{ resultado.a|join:", " }}</div>
+        {% if resultado.knowledgebase %}
+            <div class="field"><span class="label">Tipo de Página:</span> {{ resultado.knowledgebase.PageType }}</div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</body>
+</html>
+

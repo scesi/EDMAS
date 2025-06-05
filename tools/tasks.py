@@ -51,3 +51,23 @@ def run_dnsx(self, scan_id):
     job.finished_at = timezone.now()
     job.save()
     return {'status': job.state}
+
+@shared_task(bind=True)
+def run_httpx(self, scan_id):
+    job = Dnsx.objects.get(id=scan_id)
+    job.state = 'STARTED'
+    job.started_at = timezone.now()
+    job.save()
+
+    cmd = f"subfinder -d {job.target} -silent| dnsx  -silent | httpx -j"
+    proc = subprocess.run(cmd, shell=True,capture_output=True, text=True)
+    raw = proc.stdout
+
+    lines = [line.strip() for line in raw.splitlines() if line.strip()]
+
+    job.raw_output = raw
+    job.subdomains = lines
+    job.state = 'SUCCESS' if proc.returncode == 0 else 'FAILURE'
+    job.finished_at = timezone.now()
+    job.save()
+    return {'status': job.state}
