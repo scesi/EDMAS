@@ -39,7 +39,7 @@ def run_dnsx(self, scan_id):
     job.started_at = timezone.now()
     job.save()
 
-    cmd = f"subfinder -d {job.target} -silent| dnsx  -silent -recon -j"
+    cmd = f"subfinder -d {job.target} -silent | dnsx -silent -json"
     proc = subprocess.run(cmd, shell=True,capture_output=True, text=True)
     raw = proc.stdout
 
@@ -59,7 +59,7 @@ def run_httpx(self, scan_id):
     job.started_at = timezone.now()
     job.save()
 
-    cmd = f"subfinder -d {job.target} -silent| dnsx  -silent | httpx -j"
+    cmd = f"subfinder -d {job.target} -silent| dnsx  -silent | httpx -silent -json -status-code -title -tech-detect -web-server -ip -location -cdn -favicon "
     proc = subprocess.run(cmd, shell=True,capture_output=True, text=True)
     raw = proc.stdout
 

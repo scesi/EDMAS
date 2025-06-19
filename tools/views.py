@@ -5,7 +5,6 @@ from .tasks import run_subfinder, run_dnsx, run_httpx
 from django.http import JsonResponse
 import json
 
-
 class ScanListView(View):
     def get(self, request):
         scans = ScanJob.objects.all().order_by('-created_at')
@@ -60,7 +59,52 @@ class DNSGraphView(View):
         domain = request.GET.get('domain')
         if not domain:
             return redirect('scan-list')
-        return render(request, 'tools/graph.html', {'domain': domain})
+
+        job = Dnsx.objects.filter(target=domain, state='SUCCESS').order_by('-finished_at').first()
+
+        if not job or not job.raw_output:
+            context = {
+                'domain': domain,
+                'results': [],
+                'stats': {},
+                'error': 'No se encontraron resultados para este dominio.'
+            }
+            return render(request, 'tools/graph.html', context)
+
+        results = []
+        for line in job.raw_output.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+                results.append(obj)
+            except json.JSONDecodeError:
+                continue
+
+        valid_subdomains = 0
+        for r in results:
+            try:
+                status = int(r.get('status_code', 0))
+                if 200 <= status < 400:
+                    valid_subdomains += 1
+            except (ValueError, TypeError):
+                continue
+
+        stats = {
+            'total_subdomains': len(results),
+            'valid_subdomains': valid_subdomains,
+            'ttl_distribution': [],
+        }
+
+        context = {
+            'domain': domain,
+            'results': results,
+            'stats': stats,
+            'error': None,
+        }
+        return render(request, 'tools/graph.html', context)
+
 
 def dns_graph_data(request):
     domain = request.GET.get('domain')

@@ -1,16 +1,45 @@
 <!DOCTYPE html>
-<html><head><title>Scans</title></head><body>
-<h1>Escaneos de Subdominios</h1>
-<form method="post">
-  {% csrf_token %}
-  <input type="text" name="target" placeholder="example.com" required>
-  <button type="submit">Lanzar Scan</button>
-</form>
-<ul>
-  {% for scan in scans %}
-    <li><a href="{% url 'scan-detail' scan.id %}">{{ scan.target }}</a> — {{ scan.state }}</li>
-  {% empty %}
-    <li>No hay scans.</li>
-  {% endfor %}
-</ul>
-</body></html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escaneos de Subdominios</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="max-w-4xl mx-auto p-5">
+        <h1 class="text-center text-4xl text-green-400 mb-6">Escaneos de Subdominios</h1>
+        
+        <!-- Formulario de búsqueda -->
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+            <form method="post" class="flex justify-center">
+                {% csrf_token %}
+                <input type="text" name="target" class="form-input w-2/3 p-3 rounded-l-md bg-gray-700 text-white border-none" placeholder="example.com" required>
+                <button type="submit" class="bg-blue-500 text-white p-3 rounded-r-md hover:bg-blue-700">Lanzar Scan</button>
+            </form>
+        </div>
+        
+        <!-- Listado de escaneos -->
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl text-white mb-4">Escaneos Recientes</h2>
+            <ul class="space-y-3">
+                {% for scan in scans %}
+                    <li class="flex justify-between items-center">
+                        <a href="{% url 'scan-detail' scan.id %}" class="text-blue-400 hover:text-blue-600">{{ scan.target }}</a>
+                        <span class="badge bg-green-500 text-white p-2 rounded-full">{{ scan.state }}</span>
+                    </li>
+                {% empty %}
+                    <li class="text-center text-white">No hay escaneos aún.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

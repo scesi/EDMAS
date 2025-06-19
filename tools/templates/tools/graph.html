@@ -2,101 +2,86 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>DNS Graph - {{ domain }}</title>
-  <style>
-    body { margin: 0; overflow: hidden; }
-    svg { width: 100vw; height: 100vh; display: block; }
-    .link { stroke: #999; stroke-opacity: 0.6; }
-    .node { stroke: #fff; stroke-width: 1.5px; }
-    .label { font: 12px sans-serif; pointer-events: none; }
-  </style>
+  <meta charset="UTF-8" />
+  <title>Resultados DNSx - {{ domain }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <svg></svg>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script>
-    const domain = "{{ domain }}";
-    const apiUrl = `{% url 'dns-graph-data' %}?domain=${domain}`;
+<body class="bg-gray-950 text-gray-100 min-h-screen px-8 py-10">
 
-    const svg = d3.select('svg'),
-          width = window.innerWidth,
-          height = window.innerHeight;
-    const color = d3.scaleOrdinal(d3.schemeCategory10);
-    const simulation = d3.forceSimulation()
-      .force('link', d3.forceLink().id(d => d.id).distance(120).strength(1))
-      .force('charge', d3.forceManyBody().strength(-400))
-      .force('center', d3.forceCenter(width/2, height/2));
+  <div class="max-w-6xl mx-auto flex gap-6">
+    <!-- Sidebar Estadísticas -->
+    <aside class="w-72 bg-gray-900 p-6 rounded-lg shadow-md sticky top-10 h-fit">
+      <h2 class="text-xl font-bold text-emerald-400 mb-4">Estadísticas</h2>
+      
+      {% if error %}
+        <p class="text-red-500">{{ error }}</p>
+      {% else %}
+        <p><strong>Total subdominios:</strong> {{ stats.total_subdomains }}</p>
+        <p><strong>Subdominios válidos (HTTP 2xx-3xx):</strong> {{ stats.valid_subdomains }}</p>
+        
+        <h3 class="mt-4 font-semibold text-gray-300">Distribución TTL</h3>
+        <ul class="list-disc list-inside text-sm text-gray-400 max-h-48 overflow-auto">
+          {% if stats.ttl_distribution %}
+            {% for ttl, count in stats.ttl_distribution %}
+              <li>TTL {{ ttl }}: {{ count }}</li>
+            {% endfor %}
+          {% else %}
+            <li>No hay datos TTL</li>
+          {% endif %}
+        </ul>
+      {% endif %}
+    </aside>
 
-    d3.json(apiUrl)
-      .then(graph => {
-        // LINKS
-        const link = svg.append('g')
-            .attr('class','links')
-          .selectAll('line')
-          .data(graph.links)
-          .enter().append('line')
-            .attr('class','link');
+    <!-- Tabla resultados -->
+    <main class="flex-1 overflow-x-auto bg-gray-900 rounded-xl shadow-lg p-6">
+      <h1 class="text-3xl font-bold text-emerald-400 mb-6">Resultados de escaneo DNSx - {{ domain }}</h1>
+      <table class="min-w-full divide-y divide-gray-700">
+        <thead class="bg-gray-800">
+          <tr>
+            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-300">#</th>
+            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-300">Subdominio</th>
+            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-300">IP(s)</th>
+            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-300">Estado HTTP</th>
+            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-300">TTL</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-800">
+          {% for item in results %}
+            <tr class="hover:bg-gray-800 transition">
+              <td class="px-4 py-2 text-sm text-gray-400">{{ forloop.counter }}</td>
+              <td class="px-4 py-2 text-sm text-blue-400">{% if item.host %}
+                                                            {{ item.host }}
+                                                          {% elif item.input %}
+                                                             {{ item.input }}
+                                                          {% else %}
+                                                            -
+                                                          {% endif %}</td>
+              <td class="px-4 py-2 text-sm text-gray-300">
+                {% if item.a %}
+                  {{ item.a|join:", " }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td class="px-4 py-2 text-sm">
+                {% if item.status_code %}
+                  <span class="text-green-400">HTTP {{ item.status_code }}</span>
+                {% else %}
+                  <span class="text-red-400">Sin respuesta</span>
+                {% endif %}
+              </td>
+              <td class="px-4 py-2 text-sm text-gray-400">{{ item.ttl|default:"-" }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-gray-500 py-4">No se encontraron resultados.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </main>
+  </div>
 
-        // NODES
-        const nodeGroup = svg.append('g')
-            .attr('class','nodes')
-          .selectAll('g')
-          .data(graph.nodes)
-          .enter().append('g')
-            .call(d3.drag()
-              .on('start', dragstarted)
-              .on('drag', dragged)
-              .on('end', dragended)
-            );
-
-        nodeGroup.append('circle')
-            .attr('class','node')
-            .attr('r',10)
-            .attr('fill', d=> color(d.group));
-
-        // ETIQUETAS DIRECTAS
-        nodeGroup.append('text')
-            .attr('class','label')
-            .attr('x', 12)
-            .attr('y', 4)
-            .text(d => {
-              let parts = [`${d.id}`];
-              if (d.group) parts.push(`(${d.group})`);
-              if (d.ttl) parts.push(`TTL:${d.ttl}`);
-              if (d.status) parts.push(d.status);
-              return parts.join(' ');
-            });
-
-        simulation.nodes(graph.nodes).on('tick', () => {
-          link
-            .attr('x1', d => d.source.x)
-            .attr('y1', d => d.source.y)
-            .attr('x2', d => d.target.x)
-            .attr('y2', d => d.target.y);
-
-          nodeGroup
-            .attr('transform', d => `translate(${d.x},${d.y})`);
-        });
-
-        simulation.force('link').links(graph.links);
-      })
-      .catch(err => console.error('Error cargando grafo:', err));
-
-    function dragstarted(event) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      event.subject.fx = event.subject.x;
-      event.subject.fy = event.subject.y;
-    }
-    function dragged(event) {
-      event.subject.fx = event.x;
-      event.subject.fy = event.y;
-    }
-    function dragended(event) {
-      if (!event.active) simulation.alphaTarget(0);
-      event.subject.fx = null;
-      event.subject.fy = null;
-    }
-  </script>
 </body>
 </html>
+
