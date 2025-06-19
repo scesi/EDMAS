@@ -1,4 +1,4 @@
-# envysec
+# envysec EDMAS
 
 ## Descripción
 `envysec` es una plataforma construida con Django 5.2, Celery y Redis que expone una API REST para ejecutar herramientas de reconocimiento de subdominios (inicialmente Subfinder) de forma asíncrona.
